@@ -1,14 +1,21 @@
-import {BoxGeometry, MeshPhongMaterial, Scene, SphereGeometry} from "three";
-import {GLTFLoader} from "three/addons";
-
+import { BoxGeometry, MeshPhongMaterial, Scene, SphereGeometry } from "three";
+import { GLTFLoader } from "three/addons";
+import { World, Material } from 'cannon-es'
 
 export const cm1 = {
   scene: new Scene(),
   gltfLoader: new GLTFLoader(),
   mixer: undefined,
+
+  // cannon
+  world: new World(),
+  defaultMaterial: new Material('default'),
+  glassMaterial: new Material('glass'),
+  playerMaterial: new Material('player'),
 };
 
 export const cm2 = {
+  step: 0,
   backgroundColor: '#3e1322',
   lightColor: '#ffe9ac',
   floorColor: '#111',
@@ -30,9 +37,14 @@ export const mat = {
   pillar: new MeshPhongMaterial({ color: cm2.pillarColor }),
   bar: new MeshPhongMaterial({ color: cm2.barColor }),
   sideLight: new MeshPhongMaterial({ color: cm2.lightColor }),
-  glass: new MeshPhongMaterial({
+  glass1: new MeshPhongMaterial({
     color: cm2.glassColor,
     transparent: true,
     opacity: 0.1,
+  }),
+  glass2: new MeshPhongMaterial({
+    color: cm2.glassColor,
+    transparent: true,
+    opacity: 0.3,
   })
 };
