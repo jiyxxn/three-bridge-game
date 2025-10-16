@@ -3,5 +3,11 @@
     "start": "vite",
     "build": "vite build",
     "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.1.10"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
   }
 }
