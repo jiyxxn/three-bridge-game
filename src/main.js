@@ -6,13 +6,14 @@ import {Floor} from "./Floor";
 import {Bar} from "./Bar";
 import {SideLight} from "./SideLight";
 import {Glass} from "./Glass";
+import {Player} from "./Player";
 
 // ----- 주제: The Bridge 게임 만들기
 
 // Renderer
 const canvas = document.querySelector('#three-canvas');
 const renderer = new THREE.WebGLRenderer({
-	canvas: cm1.canvas,
+	canvas,
 	antialias: true
 });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -41,8 +42,10 @@ const ambientLight = new THREE.AmbientLight(cm2.lightColor, 0.9);
 scene.add(ambientLight);
 
 const spotLightDistance = 50;
-const spotLight1 = new THREE.SpotLight(cm2.lightColor, 30000);
+const spotLight1 = new THREE.SpotLight(cm2.lightColor, 40000);
 spotLight1.castShadow = true;
+spotLight1.shadow.mapSize.width = 2048;
+spotLight1.shadow.mapSize.height = 2048;
 const spotLight2 = spotLight1.clone();
 const spotLight3 = spotLight1.clone();
 const spotLight4 = spotLight1.clone();
@@ -135,13 +138,43 @@ for (let i = 0; i < numberOfGlass; i++) {
   });
 }
 
+// 플레이어
+const player = new Player({
+  name: 'player',
+  x: 0,
+  y: 10.9,
+  z: 13,
+  rotationY: Math.PI,
+});
 
+// Raycaster
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+function checkIntersects(){
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children)
+  for (const item of intersects) {
+    checkClickedObject(item.object.name);
+    break;
+  }
+};
+
+function checkClickedObject(objectName){
+  if (objectName.indexOf('glass') >= 0) {
+    // 유리판을 클릭했을 때
+  }
+}
 
 // 그리기
 const clock = new THREE.Clock();
 
 function draw() {
 	const delta = clock.getDelta();
+
+  if (cm1.mixer) cm1.mixer.update(delta);
+
 
 	controls.update();
 
@@ -158,6 +191,11 @@ function setSize() {
 
 // 이벤트
 window.addEventListener('resize', setSize);
+canvas.addEventListener('click', e => {
+  mouse.x = e.clientX / canvas.clientWidth * 2 - 1;
+  mouse.y = -(e.clientY / canvas.clientHeight * 2 - 1);
+  checkIntersects();
+});
 
 draw();
 
