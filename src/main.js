@@ -8,6 +8,7 @@ import { SideLight } from "./SideLight";
 import { Glass } from "./Glass";
 import { Player } from "./Player";
 import * as CANNON from "cannon-es";
+import gsap from "gsap";
 
 // ----- 주제: The Bridge 게임 만들기
 
@@ -214,12 +215,52 @@ function checkIntersects(){
   }
 };
 
+let fail = false;
+let jumping = false;
 function checkClickedObject(mesh){
   console.log(mesh)
   if (mesh.name.indexOf('glass') >= 0) {
     // 유리판을 클릭했을 때
+    if(jumping || fail) return;
+
     if (mesh.step - 1 === cm2.step) {
+      player.actions[2].stop();
+      player.actions[2].play();
+      jumping = true;
       cm2.step++;
+
+      switch (mesh.type) {
+        case 'normal':
+          console.log('normal');
+          setTimeout(() => {
+            player.actions[0].stop();
+            player.actions[1].play();
+            fail = true;
+          }, 700);
+          break;
+        case 'strong':
+          console.log('strong');
+          break;
+      }
+
+      setTimeout(() => {
+        jumping = false;
+      }, 1000);
+      gsap.to(
+        player.cannonBody.position,
+        {
+          duration: 1,
+          x: mesh.position.x,
+          z: glassZ[cm2.step - 1]
+        }
+      )
+      gsap.to(
+        player.cannonBody.position,
+        {
+          duration: 0.4,
+          y: 12
+        }
+      )
     }
   }
 }
@@ -235,17 +276,25 @@ function draw() {
   cm1.world.step(1/60, delta, 3);
   objects.forEach(object => {
     if (object.cannonBody) {
-      object.mesh.position.copy(object.cannonBody.position);
-      object.mesh.quaternion.copy(object.cannonBody.quaternion);
+      if (object.name === 'player') {
+        object.mesh.position.copy(object.cannonBody.position);
+        if (fail) object.mesh.quaternion.copy(object.cannonBody.quaternion);
 
-      if (object.modelMesh) {
-        object.modelMesh.position.copy(object.cannonBody.position);
-        object.modelMesh.quaternion.copy(object.cannonBody.quaternion);
+        if (object.modelMesh) {
+          object.modelMesh.position.copy(object.cannonBody.position);
+          if (fail) object.modelMesh.quaternion.copy(object.cannonBody.quaternion);
+        }
+        object.modelMesh.position.y += 0.15;
+      } else {
+        object.mesh.position.copy(object.cannonBody.position);
+        object.mesh.quaternion.copy(object.cannonBody.quaternion);
 
-        if (object.name === 'player') {
-          object.modelMesh.position.y += 0.15;
+        if (object.modelMesh) {
+          object.modelMesh.position.copy(object.cannonBody.position);
+          object.modelMesh.quaternion.copy(object.cannonBody.quaternion);
         }
       }
+
     }
   })
 
