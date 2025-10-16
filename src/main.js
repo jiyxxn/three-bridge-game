@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { cm1, cm2 } from "./common";
-import {Pillar} from "./Pillar";
-import {Floor} from "./Floor";
-import {Bar} from "./Bar";
-import {SideLight} from "./SideLight";
-import {Glass} from "./Glass";
-import {Player} from "./Player";
+import { Pillar } from "./Pillar";
+import { Floor } from "./Floor";
+import { Bar } from "./Bar";
+import { SideLight } from "./SideLight";
+import { Glass } from "./Glass";
+import { Player } from "./Player";
+import * as CANNON from "cannon-es";
 
 // ----- 주제: The Bridge 게임 만들기
 
@@ -63,9 +64,44 @@ controls.enableDamping = true;
 
 // Mesh
 
+// 물리 엔진
+cm1.world.gravity.set(0, -10, 0);
+
+const defaultContactMaterial = new CANNON.ContactMaterial(
+  cm1.glassMaterial,
+  cm1.defaultMaterial,
+  {
+    friction: 0.3,
+    restitution: 0.2
+  }
+);
+
+const glassDefaultContactMaterial = new CANNON.ContactMaterial(
+  cm1.glassMaterial,
+  cm1.playerMaterial,
+  {
+    friction: 1,
+    restitution: 0
+  }
+);
+const PlayerGlassContactMaterial = new CANNON.ContactMaterial(
+  cm1.defaultMaterial,
+  cm1.defaultMaterial,
+  {
+    friction: 1,
+    restitution: 0
+  }
+);
+
+cm1.world.defaultContactMaterial = defaultContactMaterial;
+cm1.world.addContactMaterial(glassDefaultContactMaterial);
+cm1.world.addContactMaterial(PlayerGlassContactMaterial);
+
+
 // 물체 만들기
 const glassUnitSize = 1.2;
 const numberOfGlass = 10;
+const objects = [];
 
 // 바닥
 const floor = new Floor({
@@ -87,6 +123,8 @@ const pillar2 = new Pillar({
   z: glassUnitSize * 12 + glassUnitSize / 2,
 });
 
+objects.push(pillar1, pillar2);
+
 // 바
 const bar1 = new Bar({ name: 'bar1', x: -1.6, y: 10.3, z: 0 });
 const bar2 = new Bar({ name: 'bar2', x: -0.4, y: 10.3, z: 0 });
@@ -104,12 +142,18 @@ for (let i = 0; i < 49; i++) {
   new SideLight({
     name: 'sideLight',
     container: bar4.mesh,
-    z: i * 0.5 - glassUnitSize * 10,})
+    z: i * 0.5 - glassUnitSize * 10
+  });
 }
 
 // 유리판
 let glassTypeNumber = 0;
 let glassTypes = [];
+const glassZ = [];
+
+for (let i = 0; i < numberOfGlass; i++){
+  glassZ.push(-(i * glassUnitSize * 2 - glassUnitSize * 9));
+}
 
 for (let i = 0; i < numberOfGlass; i++) {
   glassTypeNumber = Math.round(Math.random());
@@ -123,19 +167,25 @@ for (let i = 0; i < numberOfGlass; i++) {
   }
 
   const glass1 = new Glass({
+    step: i + 1,
     name: `glass-${glassTypes[0]}`,
     x: -1,
     y: 10.5,
-    z: i * glassUnitSize * 2 - glassUnitSize * 9,
-    type: glassTypes[0]
+    z: glassZ[i],
+    type: glassTypes[0],
+    cannonMaterial: cm1.glassMaterial,
   });
   const glass2 = new Glass({
+    step: i + 1,
     name: `glass-${glassTypes[1]}`,
     x: 1,
     y: 10.5,
-    z: i * glassUnitSize * 2 - glassUnitSize * 9,
-    type: glassTypes[1]
+    z: glassZ[i],
+    type: glassTypes[1],
+    cannonMaterial: cm1.glassMaterial,
   });
+
+  objects.push(glass1, glass2);
 }
 
 // 플레이어
@@ -145,7 +195,10 @@ const player = new Player({
   y: 10.9,
   z: 13,
   rotationY: Math.PI,
+  cannonMaterial: cm1.playerMaterial,
+  mass: 30
 });
+objects.push(player);
 
 // Raycaster
 const raycaster = new THREE.Raycaster();
@@ -156,14 +209,18 @@ function checkIntersects(){
 
   const intersects = raycaster.intersectObjects(scene.children)
   for (const item of intersects) {
-    checkClickedObject(item.object.name);
+    checkClickedObject(item.object);
     break;
   }
 };
 
-function checkClickedObject(objectName){
-  if (objectName.indexOf('glass') >= 0) {
+function checkClickedObject(mesh){
+  console.log(mesh)
+  if (mesh.name.indexOf('glass') >= 0) {
     // 유리판을 클릭했을 때
+    if (mesh.step - 1 === cm2.step) {
+      cm2.step++;
+    }
   }
 }
 
@@ -175,6 +232,22 @@ function draw() {
 
   if (cm1.mixer) cm1.mixer.update(delta);
 
+  cm1.world.step(1/60, delta, 3);
+  objects.forEach(object => {
+    if (object.cannonBody) {
+      object.mesh.position.copy(object.cannonBody.position);
+      object.mesh.quaternion.copy(object.cannonBody.quaternion);
+
+      if (object.modelMesh) {
+        object.modelMesh.position.copy(object.cannonBody.position);
+        object.modelMesh.quaternion.copy(object.cannonBody.quaternion);
+
+        if (object.name === 'player') {
+          object.modelMesh.position.y += 0.15;
+        }
+      }
+    }
+  })
 
 	controls.update();
 
