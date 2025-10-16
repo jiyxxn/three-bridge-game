@@ -13,6 +13,7 @@ export class Glass extends Stuff {
     this.mesh.position.set(this.x, this.y, this.z);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
+    this.mesh.name = this.name;
 
     this.type = info.type;
 
