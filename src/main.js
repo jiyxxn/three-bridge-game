@@ -133,19 +133,23 @@ const bar3 = new Bar({ name: 'bar3', x: 0.4, y: 10.3, z: 0 });
 const bar4 = new Bar({ name: 'bar4', x: 1.6, y: 10.3, z: 0 });
 
 // 사이드 라이트
+const sideLights = [];
 for (let i = 0; i < 49; i++) {
-  new SideLight({
-    name: 'sideLight',
-    container: bar1.mesh,
-    z: i * 0.5 - glassUnitSize * 10,})
+  sideLights.push(
+    new SideLight({
+      name: 'sideLight',
+      container: bar1.mesh,
+      z: i * 0.5 - glassUnitSize * 10,})
+  );
+}for (let i = 0; i < 49; i++) {
+  sideLights.push(
+    new SideLight({
+      name: 'sideLight',
+      container: bar4.mesh,
+      z: i * 0.5 - glassUnitSize * 10,})
+  );
 }
-for (let i = 0; i < 49; i++) {
-  new SideLight({
-    name: 'sideLight',
-    container: bar4.mesh,
-    z: i * 0.5 - glassUnitSize * 10
-  });
-}
+
 
 // 유리판
 let glassTypeNumber = 0;
@@ -233,9 +237,12 @@ function checkClickedObject(mesh){
         case 'normal':
           console.log('normal');
           setTimeout(() => {
+            fail = true;
             player.actions[0].stop();
             player.actions[1].play();
-            fail = true;
+            sideLights.forEach(sideLight => {
+              sideLight.turnOff();
+            })
           }, 700);
           break;
         case 'strong':
@@ -253,14 +260,38 @@ function checkClickedObject(mesh){
           x: mesh.position.x,
           z: glassZ[cm2.step - 1]
         }
-      )
+      );
       gsap.to(
         player.cannonBody.position,
         {
           duration: 0.4,
           y: 12
         }
-      )
+      );
+
+      // 클리어
+      if (cm2.step === numberOfGlass && mesh.type === 'strong') {
+        player.actions[2].stop();
+        player.actions[2].play();
+
+        setTimeout(() => {
+          gsap.to(
+            player.cannonBody.position,
+            {
+              duration: 1,
+              x: 0,
+              z: -14
+            }
+          );
+          gsap.to(
+            player.cannonBody.position,
+            {
+              duration: 0.4,
+              y: 12
+            }
+          );
+        }, 1500);
+      }
     }
   }
 }
