@@ -9,6 +9,7 @@ import { Glass } from "./Glass";
 import { Player } from "./Player";
 import * as CANNON from "cannon-es";
 import gsap from "gsap";
+import { PreventDragClick } from "./PreventDragClick";
 
 // ----- 주제: The Bridge 게임 만들기
 
@@ -34,10 +35,16 @@ const camera = new THREE.PerspectiveCamera(
 	0.1,
 	1000
 );
+const camera2 = camera.clone();
+
 camera.position.x = -4;
 camera.position.y = 19;
 camera.position.z = 14;
-scene.add(camera);
+
+camera2. position.y = 0;
+camera2.lookAt(0, 1, 0);
+
+scene.add(camera, camera2);
 
 // Light
 const ambientLight = new THREE.AmbientLight(cm2.lightColor, 0.9);
@@ -221,6 +228,8 @@ function checkIntersects(){
 
 let fail = false;
 let jumping = false;
+let onReplay = false;
+
 function checkClickedObject(mesh){
   console.log(mesh)
   if (mesh.name.indexOf('glass') >= 0) {
@@ -242,7 +251,15 @@ function checkClickedObject(mesh){
             player.actions[1].play();
             sideLights.forEach(sideLight => {
               sideLight.turnOff();
-            })
+            });
+
+            setTimeout(() => {
+              onReplay = true;
+              player.cannonBody.position.y = 9;
+              setTimeout(() => {
+                onReplay = false;
+              }, 3000);
+            }, 2000);
           }, 700);
           break;
         case 'strong':
@@ -308,9 +325,6 @@ function draw() {
   objects.forEach(object => {
     if (object.cannonBody) {
       if (object.name === 'player') {
-        object.mesh.position.copy(object.cannonBody.position);
-        if (fail) object.mesh.quaternion.copy(object.cannonBody.quaternion);
-
         if (object.modelMesh) {
           object.modelMesh.position.copy(object.cannonBody.position);
           if (fail) object.modelMesh.quaternion.copy(object.cannonBody.quaternion);
@@ -327,11 +341,17 @@ function draw() {
       }
 
     }
-  })
+  });
 
 	controls.update();
 
-	renderer.render(scene, camera);
+  if (!onReplay) {
+    renderer.render(scene, camera);
+  } else {
+    renderer.render(scene, camera2);
+    camera2.position.x = player.cannonBody.position.x;
+    camera2.position.z = player.cannonBody.position.z;
+  }
 	window.requestAnimationFrame(draw);
 }
 
@@ -343,8 +363,10 @@ function setSize() {
 }
 
 // 이벤트
+const preventDragClick = new PreventDragClick(canvas);
 window.addEventListener('resize', setSize);
 canvas.addEventListener('click', e => {
+  if (preventDragClick.mouseMoved) return;
   mouse.x = e.clientX / canvas.clientWidth * 2 - 1;
   mouse.y = -(e.clientY / canvas.clientHeight * 2 - 1);
   checkIntersects();
