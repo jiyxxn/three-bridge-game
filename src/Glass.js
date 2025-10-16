@@ -6,17 +6,32 @@ export class Glass extends Stuff {
   constructor(info) {
     super(info);
 
+    this.type = info.type;
+    this.step = info.step;
+
     this.geometry = geo.glass;
-    this.material = mat.glass;
+    switch (this.type) {
+      case 'normal':
+        this.material = mat.glass1;
+        break;
+      case 'strong':
+        this.material = mat.glass2;
+        break;
+    }
+
+    this.width = this.geometry.parameters.width;
+    this.height = this.geometry.parameters.height;
+    this.depth = this.geometry.parameters.depth;
 
     this.mesh = new Mesh(this.geometry, this.material);
     this.mesh.position.set(this.x, this.y, this.z);
     this.mesh.castShadow = true;
     this.mesh.receiveShadow = true;
     this.mesh.name = this.name;
-
-    this.type = info.type;
+    this.mesh.step = this.step;
 
     cm1.scene.add(this.mesh);
+
+    this.setCannonBody();
   }
 }
