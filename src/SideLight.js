@@ -1,4 +1,4 @@
-import { cm1, cm2, cm2 as m2, geo, mat } from "./common";
+import { cm1, cm2, geo, mat } from "./common";
 import {Mesh} from "three";
 
 export class SideLight {
